@@ -122,7 +122,15 @@ enum ItemGlyph {
     /// keine gibt — dann greift das Kategoriezeichen, statt dass ein
     /// erfundenes Bild das Falsche behauptet.
     static func drawing(for term: String, in rect: CGRect) -> CategoryGlyph.Drawing? {
-        guard let recipe = recipes[term] else { return nil }
+        // **Eine Sorte ohne eigene Zeichnung trägt die ihres Topfes.** Die
+        // Runde vom 2026-08-25 hat 91 Sorten unter die Sammelbegriffe gehängt
+        // (`salami` unter `wurst`, `gouda` unter `käse`), damit die Suche
+        // aufhört, das ganze Regal auszuschütten. Ohne diese Zeile verlöre
+        // „Salami" dabei sein Bild und bekäme das Kategoriezeichen — eine
+        // Verschlechterung, die mit der Sache nichts zu tun hat.
+        let eigenes = recipes[term]
+        let geerbt = MatchDictionary.oberbegriff(of: term).flatMap { recipes[$0] }
+        guard let recipe = eigenes ?? geerbt else { return nil }
         var pen = Pen(rect: rect)
         recipe(&pen)
 

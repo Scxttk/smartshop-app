@@ -40,6 +40,98 @@ final class MatchShelfTests: XCTestCase {
     /// `milch` gesperrt), „Putenbrustfilet" (bei `fisch` gesperrt) — sie
     /// gehören zu einem anderen Begriff und müssen dort auch bleiben.
     private static let regal: [String: String] = [
+        // Tranche 12 (2026-08-25): die Sorten unter den Sammeltöpfen.
+        "ananas": "Ananas frisch Stück",
+        "antipasti": "Mediterrane Antipasti 150 g",
+        "aperitif": "Aperol Aperitivo 0,7 l",
+        "aprikosen": "Aprikosen Kl. I, 500 g",
+        "aufschnitt": "Frischwurst-Aufschnitt 200 g",
+        "backmischung": "Backmischung Marmorkuchen",
+        "bergkäse": "Bergkäse 12 Monate 200 g",
+        "berliner": "Berliner mit Zuckerguss",
+        "blumenkohl": "Blumenkohl Stück",
+        "bohnen": "Weiße Bohnen 400 g",
+        "brause": "Ahoj-Brause Klassiker",
+        "butterkäse": "Butterkäse Scheiben 400 g",
+        "cabanossi": "Cabanossi 200 g",
+        "camembert": "Camembert 45 % Fett i. Tr.",
+        "cappuccino": "Cappuccino Instant 200 g",
+        "cheddar": "Cheddar Block 200 g",
+        "chinakohl": "Chinakohl Stück",
+        "currywurst": "Currywurst mit Sauce 300 g",
+        "datteln": "Getrocknete Datteln 200 g",
+        "donut": "Donut Schoko 2 Stück",
+        "dorade": "Dorade Royal ausgenommen",
+        "eiscreme": "Eiscreme Vanille 900 ml",
+        "eistee": "Eistee Zitrone 1,5 l",
+        "emmentaler": "Emmentaler Scheiben 250 g",
+        "espresso": "Espresso gemahlen 250 g",
+        "fischstäbchen": "Fischstäbchen 15 Stück",
+        "flammkuchen": "Flammkuchen Elsässer Art",
+        "forelle": "Forelle geräuchert 200 g",
+        "fruchtgummi": "Fruchtgummi Goldbären 200 g",
+        "garnelen": "Garnelen roh 200 g",
+        "gin": "London Dry Gin 0,7 l",
+        "gnocchi": "Gnocchi frisch 500 g",
+        "gouda": "Gouda jung am Stück",
+        "grapefruit": "Grapefruit rosa Stück",
+        "harzer": "Harzer Rolle 200 g",
+        "helles": "Kellerbier naturtrüb Kasten",
+        "hering": "Heringsfilets in Sahnesauce",
+        "kabeljau": "Kabeljaufilet tiefgekühlt 400 g",
+        "kaffeebohnen": "Kaffeebohnen Crema 1 kg",
+        "kichererbsen": "Kichererbsen 400 g Glas",
+        "kirschen": "Süßkirschen 500 g Schale",
+        "krakauer": "Schinken-Krakauer 200 g",
+        "lachs": "Räucherlachs 100 g",
+        "lasagne": "Lasagne Bolognese 400 g",
+        "laugengebäck": "Laugenbrezen 4 Stück",
+        "leberkäse": "Bayerischer Leberkäse 200 g",
+        "leberwurst": "Hausmacher Leberwurst im Glas",
+        "likör": "Kräuterlikör 0,7 l",
+        "linsen": "Rote Linsen 500 g",
+        "löslicher kaffee": "Löslicher Kaffee Gold 200 g",
+        "mais": "Sonnenmais 285 g",
+        "mango": "Mango flugreif Stück",
+        "mascarpone": "Mascarpone 250 g",
+        "mett": "Thüringer Mett 100 g",
+        "mochi": "Mochi Ice Cream 6 Stück",
+        "muffins": "Muffins Schoko 4 Stück",
+        "nackensteak": "Nackensteaks mariniert 750 g",
+        "nektarinen": "Nektarinen Kl. I, 1 kg",
+        "oliven": "Grüne Oliven ohne Stein 200 g",
+        "parmesan": "Parmigiano Reggiano gerieben",
+        "passionsfrucht": "Passionsfrucht Stück",
+        "penne": "Penne Rigate No. 73",
+        "pflaumen": "Zwetschgen Kl. I, 750 g",
+        "pils": "Premium Pils Kasten 20 x 0,5 l",
+        "pralinen": "Pralinés Herzen 110 g",
+        "radieschen": "Radieschen Bund",
+        "radler": "Natur Radler 0,5 l",
+        "roséwein": "Rosé trocken 0,75 l",
+        "rote bete": "Rote Bete in Scheiben 250 g",
+        "rotwein": "Primitivo Puglia trocken 0,75 l",
+        "rum": "Cuban Rum 37,5 % 0,7 l",
+        "salami": "Delikatess Edelsalami 80 g",
+        "schmelzkäse": "Schmelzkäsescheiben 200 g",
+        "schnittkäse": "Schnittkäse in Scheiben 150 g",
+        "schokoriegel": "Schokoriegel 5 x 20 g",
+        "schwarzbier": "Schwarzbier Kasten 20 x 0,5 l",
+        "schweinebauch": "Schweinebauch ohne Knochen",
+        "sekt": "Sekt trocken 0,75 l",
+        "spaghetti": "Spaghetti No. 5, 500 g",
+        "spezi": "Spezi 1,25 l",
+        "stieleis": "Stieleis Mandel 3 Stück",
+        "sülze": "Sülze im Ring 100 g",
+        "tafelschokolade": "Tafelschokolade Alpenmilch 100 g",
+        "tequila": "Tequila Blanco 0,7 l",
+        "thunfisch": "Thunfischfilets in eigenem Saft",
+        "vodka": "Wodka 37,5 % 0,7 l",
+        "weinbrand": "Weinbrand 36 % 0,7 l",
+        "weizenbier": "Hefeweizen naturtrüb 6 x 0,5 l",
+        "whisky": "Blended Scotch Whisky 0,7 l",
+        "würstchen": "Wiener Würstchen 5 Paar",
+        "ziegenkäse": "Ziegenkäse Rolle 100 g",
         // Tranche 11 (2026-08-07): die letzten Lücken.
         "cola": "Coca-Cola 1,25 l",
         "fruchtsaft": "Multivitaminsaft 1 l",
@@ -466,6 +558,44 @@ final class MatchShelfTests: XCTestCase {
     /// Begriffsname selbst, abzüglich der gesperrten — genau die Regel aus
     /// `MatchDictionary.loaded`, hier noch einmal von Hand, damit ein Fehler
     /// dort nicht auf beiden Seiten gleich ausfällt.
+    /// **Suchwort → die Begriffe, die es meint** — dieselbe Regel wie
+    /// `MatchDictionary.engste`, hier noch einmal aus der Datei gerechnet.
+    ///
+    /// Zweimal gerechnet, und das ist Absicht: Dieser Test prüft die Klasse,
+    /// er darf ihre Tabellen nicht benutzen (siehe Kopf der Datei). Seit der
+    /// Runde vom 2026-08-25 zeigt ein Wort meist auf zwei Begriffe — die Sorte
+    /// und die Warengruppe darüber —, und nur die Sorte ist gemeint.
+    ///
+    /// Mehrwortige Synonyme („ganze Bohnen") gehen nicht diesen Weg: Sie
+    /// werden als ganze Wendung geprüft und dort **nicht** verengt.
+    private static func gemeint(_ wort: String) -> Set<String> {
+        if wort.contains(" ") { return begriffeJeWendung[wort] ?? [] }
+        let alle = begriffeJeWort[wort] ?? []
+        if alle.contains(wort) { return [wort] }
+        guard let engste = alle.map({ synonymzahl[$0] ?? 0 }).min() else { return alle }
+        return alle.filter { (synonymzahl[$0] ?? 0) == engste }
+    }
+
+    private static let begriffeJeWort: [String: Set<String>] = tabellen.wort
+    private static let begriffeJeWendung: [String: Set<String>] = tabellen.wendung
+    private static let synonymzahl: [String: Int] = tabellen.zahl
+
+    private static let tabellen: (
+        wort: [String: Set<String>], wendung: [String: Set<String>], zahl: [String: Int]
+    ) = {
+        var wort: [String: Set<String>] = [:]
+        var wendung: [String: Set<String>] = [:]
+        var zahl: [String: Int] = [:]
+        for (begriff, eintrag) in woerterbuch {
+            for w in synonyme(of: begriff, eintrag) {
+                if w.contains(" ") { wendung[w, default: []].insert(begriff) }
+                else { wort[w, default: []].insert(begriff) }
+                zahl[begriff, default: 0] += 1
+            }
+        }
+        return (wort, wendung, zahl)
+    }()
+
     private static func synonyme(of begriff: String, _ eintrag: Eintrag) -> [String] {
         let gesperrt = Set((eintrag.block ?? []).map(normalisiert))
         return ((eintrag.exact ?? []) + [begriff])
@@ -516,11 +646,15 @@ final class MatchShelfTests: XCTestCase {
         var fehler: [String] = []
         var geprueft = 0
         for (begriff, eintrag) in Self.woerterbuch.sorted(by: { $0.key < $1.key }) {
-            guard let titel = Self.regal[begriff] else { continue }
             for wort in Self.synonyme(of: begriff, eintrag) {
                 geprueft += 1
-                if !produkte(wort, in: Self.echtesRegal).contains(titel) {
-                    fehler.append("„\(wort)“ findet „\(begriff)“ nicht")
+                // Geprüft wird der Begriff, den das Wort **meint** — bei einer
+                // Sorte ist das die Sorte und nicht der Topf, in dem sie liegt.
+                for gemeinter in Self.gemeint(wort).sorted() {
+                    guard let titel = Self.regal[gemeinter] else { continue }
+                    if !produkte(wort, in: Self.echtesRegal).contains(titel) {
+                        fehler.append("„\(wort)“ findet „\(gemeinter)“ nicht")
+                    }
                 }
             }
         }
@@ -537,13 +671,25 @@ final class MatchShelfTests: XCTestCase {
         var fehler: [String] = []
         var geprueft = 0
         let reihenfolge = Self.regal.keys.sorted()
+        let zeile = { (b: String) -> String? in
+            reihenfolge.firstIndex(of: b).map { "Qxvz Zzyx \($0)" }
+        }
         for (begriff, eintrag) in Self.woerterbuch.sorted(by: { $0.key < $1.key }) {
-            guard let index = reihenfolge.firstIndex(of: begriff) else { continue }
-            let titel = "Qxvz Zzyx \(index)"
             for wort in Self.synonyme(of: begriff, eintrag) {
                 geprueft += 1
-                if !produkte(wort, in: Self.namenlosesRegal).contains(titel) {
-                    fehler.append("„\(wort)“ erreicht „\(begriff)“ nur über den Titel")
+                let gemeinte = Self.gemeint(wort)
+                let gefunden = produkte(wort, in: Self.namenlosesRegal)
+                for gemeinter in gemeinte.sorted() {
+                    guard let titel = zeile(gemeinter) else { continue }
+                    if !gefunden.contains(titel) {
+                        fehler.append("„\(wort)“ erreicht „\(gemeinter)“ nur über den Titel")
+                    }
+                }
+                // **Und die Gegenrichtung, der eigentliche Fund dieser Runde:**
+                // Ein Wort darf den Topf, in dem seine Sorte liegt, nicht mehr
+                // aufmachen. „Salami" holte über `wurst` das ganze Regal.
+                if !gemeinte.contains(begriff), let topf = zeile(begriff), gefunden.contains(topf) {
+                    fehler.append("„\(wort)“ öffnet noch „\(begriff)“")
                 }
             }
         }

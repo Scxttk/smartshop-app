@@ -28,7 +28,10 @@ struct OfferMatch: Equatable, Identifiable {
 /// Stage 2 (category): a query token that the title does not carry may still
 /// be satisfied by the offer's `match_key` tags — either by tag equality, or
 /// through `MatchDictionary`, which maps the *word the user typed* to the
-/// terms it means ("Fleischersatz" → `tofu`). The tags come from the backend
+/// terms it means ("Fleischersatz" → `tofu`). Gefragt wird `meaning`, nicht
+/// `terms`: Ein Wort zeigt seit dem 25.08. meist auf die Sorte **und** auf
+/// die Warengruppe darüber, und die Warengruppe ist nicht, was jemand
+/// getippt hat. The tags come from the backend
 /// dictionary, which already blocks false composites (Tomatenmark carries no
 /// "tomaten" tag), so tag equality is safe without extra filtering.
 ///
@@ -121,7 +124,7 @@ enum OfferMatcher {
         // Einmal vorab statt je Angebot: die Begriffe, die jedes Suchwort
         // meinen kann, und die der ganzen Anfrage als Wendung
         // („crème fraîche" → `sahne`, einzeln wäre „creme" nichts).
-        let termsPerToken = queryTokens.map { MatchDictionary.terms(forToken: $0) }
+        let termsPerToken = queryTokens.map { MatchDictionary.meaning(forToken: $0) }
         let phraseTerms = MatchDictionary.terms(forPhrase: normalize(query))
 
         var direct: [Offer] = []
