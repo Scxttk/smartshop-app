@@ -31,14 +31,22 @@ final class ItemGlyphTests: XCTestCase {
     /// Test, welche Zeichnung ins Leere zeigt.
     func testEveryDictionaryTermIsDrawnOrNamedAsAnException() {
         let wörterbuch = Set(MatchDictionary.allTerms)
-        XCTAssertEqual(wörterbuch.count, 344,
+        XCTAssertEqual(wörterbuch.count, 434,
                        "Das Wörterbuch hat sich geändert — die Zahl hier ist nur der Wecker, "
                        + "die Arbeit steht in den Meldungen darunter.")
 
         let gezeichnet = Set(ItemGlyph.drawnTerms)
         let ausnahmen = ItemGlyph.withoutDrawing
 
-        let ohneAntwort = wörterbuch.subtracting(gezeichnet).subtracting(ausnahmen).sorted()
+        // **Die dritte mögliche Antwort, seit dem 2026-08-25:** eine Sorte
+        // darf das Bild ihres Topfes tragen (`salami` → `wurst`). Sie zählt
+        // hier als beantwortet, solange der Topf gezeichnet ist — was nicht
+        // gezeichnet ist, fällt weiter auf.
+        let geerbt = wörterbuch.filter { begriff in
+            MatchDictionary.oberbegriff(of: begriff).map { gezeichnet.contains($0) } ?? false
+        }
+        let ohneAntwort = wörterbuch
+            .subtracting(gezeichnet).subtracting(ausnahmen).subtracting(geerbt).sorted()
         XCTAssertTrue(ohneAntwort.isEmpty,
                       "Weder Zeichnung noch benannte Ausnahme: \(ohneAntwort)")
 

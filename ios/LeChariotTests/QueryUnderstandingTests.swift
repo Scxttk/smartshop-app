@@ -28,8 +28,11 @@ final class QueryUnderstandingTests: XCTestCase {
         QueryUnderstandingTests.offer("Deutsche Markenbutter 250 g", tags: ["butter"]),
         QueryUnderstandingTests.offer("GRÜNLÄNDER Schnittkäse 400 g", tags: ["käse"]),
         QueryUnderstandingTests.offer("Speck-Käse-Twister", tags: ["backwaren"]),
-        QueryUnderstandingTests.offer("Zwetschgen Klasse I, 500 g", tags: ["pfirsich"]),
+        QueryUnderstandingTests.offer("Zwetschgen Klasse I, 500 g", tags: ["pflaumen"]),
         QueryUnderstandingTests.offer("Mühlen Filets Typ Hähnchen", tags: ["tofu"]),
+        // Ans Ende, nicht in die Mitte: Zwei Tests greifen die Zeilen über
+        // ihren Index (`regal[4]`).
+        QueryUnderstandingTests.offer("MILBONA Zaziki 200 g", tags: ["soßen"]),
     ]
 
     // MARK: Fall 1 — vertippt
@@ -76,13 +79,26 @@ final class QueryUnderstandingTests: XCTestCase {
 
     // MARK: Fall 2 — bewusst grober Begriff
 
-    /// `pfirsich` fasst im Wörterbuch alles Steinobst zusammen. Das ist Absicht
-    /// und wird hier zur **sichtbaren** Tatsache statt zum Rätsel: Wer
-    /// „Zwetschgen" tippt und Pfirsiche bekommt, liest ab jetzt, warum.
+    /// Manche Begriffe fassen bewusst mehrere Waren zusammen — `soßen` führt
+    /// die Dips mit. Das wird hier zur **sichtbaren** Tatsache statt zum
+    /// Rätsel: Wer „Zaziki" tippt und Soßen bekommt, liest ab jetzt, warum.
+    ///
+    /// Bis zum 2026-08-25 stand hier „Zwetschgen" → `pfirsich`. Der Begriff
+    /// fasste alles Steinobst zusammen; elf Meldungen in dreißig Tagen sagten,
+    /// dass niemand das so meint. Die Zwetschge hat jetzt ihren eigenen
+    /// Begriff, und was sie zeigt, steht eine Zeile weiter unten.
     func testACoarseTermIsNamedAsItIs() {
+        let reading = QueryUnderstanding.of(query: "Zaziki", in: regal)
+        XCTAssertEqual(reading.words.map(\.reading), [.term("soßen")])
+        XCTAssertEqual(reading.headline, "Verstanden als Soßen")
+    }
+
+    /// Die Gegenprobe zur Runde vom 25.08.: Die Zwetschge ist kein Pfirsich
+    /// mehr, sondern eine Pflaume.
+    func testAFineTermIsNamedAsItself() {
         let reading = QueryUnderstanding.of(query: "Zwetschgen", in: regal)
-        XCTAssertEqual(reading.words.map(\.reading), [.term("pfirsich")])
-        XCTAssertEqual(reading.headline, "Verstanden als Pfirsich")
+        XCTAssertEqual(reading.words.map(\.reading), [.term("pflaumen")])
+        XCTAssertEqual(reading.headline, "Verstanden als Pflaumen")
     }
 
     /// Dieselbe Form, der Fall aus dem Backlog: „Hafermilch" ist `milch`.

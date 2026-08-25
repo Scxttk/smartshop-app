@@ -76,12 +76,10 @@ enum ItemDetailVocabulary {
     /// - Parameter query: der Artikeltext, roh.
     static func kinds(for query: String) -> Group? {
         guard let token = OfferMatcher.tokens(query).last else { return nil }
-        // Der **engste** Begriff, nicht irgendeiner: `brokkoli` trägt Chicorée
-        // und Zuckermais mit, `chicorée` trägt Chicorée. Dieselbe Regel wie in
-        // `ItemGlyphTerm`, wo ein zu grober Begriff ein falsches Bild ergibt.
-        guard let term = MatchDictionary.terms(forToken: token)
-            .min(by: { MatchDictionary.synonymCount(for: $0) < MatchDictionary.synonymCount(for: $1) })
-        else { return nil }
+        // Der **engste** Begriff, nicht irgendeiner: „Salami" zeigt auch auf
+        // `wurst`, und die Sorten einer ganzen Warengruppe sind keine Sorten
+        // dieses Artikels. Die Regel steht in `MatchDictionary.engste`.
+        guard let term = MatchDictionary.meaning(forToken: token).min() else { return nil }
 
         var gesehen = Set<String>()
         let chips = MatchDictionary.words(of: term)

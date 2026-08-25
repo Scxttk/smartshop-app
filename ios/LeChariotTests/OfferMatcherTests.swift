@@ -167,6 +167,56 @@ final class OfferMatcherTests: XCTestCase {
         XCTAssertEqual(MatchDictionary.terms(forToken: "fleischersatz"), ["tofu"])
     }
 
+    // MARK: Sorte statt Warengruppe (Wörterbuch-Runde 2026-08-25)
+
+    /// Das Wurstregal der Woche, so getaggt, wie das Backend seit der Runde
+    /// vom 25.08. taggt: **beide** Tags, die Sorte und die Warengruppe.
+    private var wurstRegal: [Offer] {
+        [
+            offer("AOSTE Salami", matchKey: ["wurst", "salami"]),
+            offer("WILTMANN Bio-Salami", matchKey: ["wurst", "salami"]),
+            offer("K-CLASSIC Rostbratwurst", matchKey: ["wurst", "bratwurst"]),
+            offer("Rügenwalder Teewurst", matchKey: ["wurst", "leberwurst"]),
+            offer("BÖKLUNDER Kleine Wiener", matchKey: ["wurst", "würstchen"]),
+        ]
+    }
+
+    /// **Die häufigste Beschwerde, als Test.** Wer „Salami" tippt, bekam über
+    /// den Tag `wurst` das ganze Regal — am Bestand vom 25.08. waren das 216
+    /// Angebote für jedes einzelne Wurstwort, „Frankfurter" und „Leberwurst"
+    /// eingeschlossen.
+    func testASortDoesNotDragInTheWholeShelf() {
+        let treffer = OfferMatcher.matches(for: "Salami", in: wurstRegal)
+        XCTAssertEqual(
+            Set(treffer.map(\.offer.product)),
+            ["AOSTE Salami", "WILTMANN Bio-Salami"],
+            "geliefert wurde: \(treffer.map(\.offer.product))"
+        )
+    }
+
+    /// Und die Gegenprobe, ohne die der Test oben auch von einer kaputten
+    /// Suche erfüllt wäre: Die Warengruppe selbst holt weiterhin alles.
+    func testTheShelfWordStillFindsEverything() {
+        let treffer = OfferMatcher.matches(for: "Wurst", in: wurstRegal)
+        XCTAssertEqual(treffer.count, wurstRegal.count)
+    }
+
+    /// Ein Suchwort ohne Titeltreffer, das nur über die Sorte ankommt.
+    func testASortWordFindsItsOfferWithoutStandingInTheTitle() {
+        let treffer = OfferMatcher.matches(for: "Frankfurter", in: wurstRegal)
+        XCTAssertEqual(treffer.map(\.offer.product), ["BÖKLUNDER Kleine Wiener"])
+    }
+
+    /// **Die Regel selbst**, an den beiden Fällen, die sie gebaut haben.
+    func testTheNarrowerTermWins() {
+        XCTAssertTrue(MatchDictionary.terms(forToken: "salami").contains("wurst"))
+        XCTAssertEqual(MatchDictionary.meaning(forToken: "salami"), ["salami"])
+        // Gemeldet am 25.08.: „Brokkoli gesucht, alles andere an Gemüse
+        // bekommen." `brokkoli` trug Porree, Radieschen und Rote Bete mit.
+        XCTAssertEqual(MatchDictionary.meaning(forToken: "porree"), ["lauch"])
+        XCTAssertEqual(MatchDictionary.terms(forToken: "brokkoli"), ["brokkoli"])
+    }
+
     /// **Der gemeldete Fall, und er muss leer bleiben.** „vegan Schnitzel"
     /// meint ein Produkt, das beides ist — kein Schweineschnitzel. Mit einem
     /// ODER in Stufe 2 hätte die Synonym-Abbildung genau das geliefert, weil

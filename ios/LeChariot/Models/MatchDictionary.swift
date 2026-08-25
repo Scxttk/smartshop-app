@@ -35,11 +35,63 @@ enum MatchDictionary {
     /// Begriff → seine Synonyme **in der Schreibweise der Datei**, siehe
     /// `words(of:)`.
     private static let byTerm: [String: [String]] = loaded.byTerm
+    /// Sorte → Topf, siehe `oberbegriff(of:)`.
+    private static let ueber: [String: String] = loaded.ueber
+
+    /// **Der Topf, in dem diese Sorte liegt** — `salami` → `wurst`, `gouda` →
+    /// `käse`. `nil` für jeden Begriff, der selbst einer ist.
+    ///
+    /// Gebraucht dort, wo eine Sorte noch nichts Eigenes hat: `ItemGlyph`
+    /// nimmt das Bild des Topfes, solange die Sorte keine eigene Zeichnung
+    /// bekommen hat. Ein Wörterbuch mit 435 Begriffen und 91 neuen Sorten
+    /// wartet sonst darauf, dass jemand 91 Bilder zeichnet, bevor die Suche
+    /// besser werden darf.
+    static func oberbegriff(of term: String) -> String? { ueber[term] }
 
     /// Die Begriffe, die dieses einzelne Suchwort meinen kann. Leer, wenn das
     /// Wörterbuch es nicht kennt — dann bleibt nur der Titeltreffer.
     static func terms(forToken token: String) -> Set<String> {
         byWord[token] ?? []
+    }
+
+    /// **Was ein Suchwort meint — der engste Begriff, nicht jeder, der es
+    /// führt.**
+    ///
+    /// `terms(forToken:)` gibt jeden Begriff zurück, in dessen Synonymliste
+    /// das Wort steht, und das sind seit der Wörterbuch-Runde vom 2026-08-25
+    /// meistens zwei: die Sorte und die Warengruppe darüber. „Salami" zeigt
+    /// auf `salami` **und** auf `wurst`.
+    ///
+    /// Fürs **Taggen** ist beides richtig — ein Salami-Angebot trägt beide
+    /// Tags, und wer „Wurst" auf die Liste schreibt, soll es sehen. Für die
+    /// **Suche** ist es das nicht: Wer „Salami" tippt, bekam über `wurst`
+    /// alle 216 Wurstangebote der Woche (gemessen am Bestand vom 25.08.),
+    /// wer „Frankfurter" tippt, dieselben 216. Das ist die häufigste
+    /// Beschwerde in `match_feedback`.
+    static func meaning(forToken token: String) -> Set<String> {
+        engste(terms(forToken: token), für: token)
+    }
+
+    /// **Welcher Begriff gemeint ist, wenn ein Wort auf mehrere zeigt.**
+    ///
+    /// 1. **Heißt ein Begriff wie das Wort, ist er es.** „Kuchen" meint
+    ///    `kuchen` und nicht `backwaren`, auch wenn `backwaren` das Wort in
+    ///    seiner Synonymliste führt.
+    /// 2. **Sonst gewinnt der feinere** — gemessen an der Zahl seiner
+    ///    Synonyme. Ein Begriff, der fünfzig Wörter einsammelt, ist eine
+    ///    Warengruppe; einer mit dreien ist ein Ding.
+    ///
+    /// Bei Gleichstand bleiben beide stehen: Eine Trefferliste verträgt zwei
+    /// Begriffe, ein Bild nicht — wer einen einzigen braucht, nimmt den
+    /// alphabetisch ersten (`ItemGlyphTerm`).
+    ///
+    /// Die Regel stand bis zum 25.08. in `ItemGlyphTerm` und galt nur fürs
+    /// Zeichen. Sie steht hier, weil die Suche dieselbe Frage stellt und zwei
+    /// Antworten darauf auseinanderlaufen würden.
+    static func engste(_ kandidaten: Set<String>, für wort: String) -> Set<String> {
+        if kandidaten.contains(wort) { return [wort] }
+        guard let engste = kandidaten.map({ synonymCount(for: $0) }).min() else { return kandidaten }
+        return kandidaten.filter { synonymCount(for: $0) == engste }
     }
 
     /// Die Begriffe, die die ganze Anfrage als Wendung meint.
@@ -99,6 +151,9 @@ enum MatchDictionary {
     private struct Entry: Decodable {
         let exact: [String]?
         let block: [String]?
+        /// Der Topf, in dem diese Sorte liegt — `salami` → `wurst`. Fehlt bei
+        /// jedem Begriff, der selbst einer ist.
+        let oberbegriff: String?
     }
 
     private struct File: Decodable {
@@ -109,7 +164,7 @@ enum MatchDictionary {
 
     private static let loaded: (
         byWord: [String: Set<String>], byPhrase: [String: Set<String>], counts: [String: Int],
-        byTerm: [String: [String]]
+        byTerm: [String: [String]], ueber: [String: String]
     ) = {
         // Im Test-Bundle liegt die Datei nicht in `Bundle.main`, in der App
         // schon — beide Wege, damit dieselbe Klasse in beiden Fällen lädt.
@@ -123,7 +178,7 @@ enum MatchDictionary {
             // Ohne Wörterbuch verhält sich die Suche wie vorher: Titeltreffer
             // und Tag-Gleichheit. Eine fehlende Datei darf die Suche nicht
             // abschalten.
-            return ([:], [:], [:], [:])
+            return ([:], [:], [:], [:], [:])
         }
 
         var byWord: [String: Set<String>] = [:]
@@ -131,8 +186,10 @@ enum MatchDictionary {
         var counts: [String: Int] = [:]
         var byTerm: [String: [String]] = [:]
         var seenPerTerm: [String: Set<String>] = [:]
+        var ueber: [String: String] = [:]
 
         for (term, entry) in file.begriffe {
+            if let topf = entry.oberbegriff { ueber[term] = topf }
             // Gesperrte Wörter dieses Begriffs: „milchreis" darf nie auf
             // `milch` zeigen.
             let blocked = Set((entry.block ?? []).map(normalized))
@@ -155,7 +212,7 @@ enum MatchDictionary {
                 }
             }
         }
-        return (byWord, byPhrase, counts, byTerm)
+        return (byWord, byPhrase, counts, byTerm, ueber)
     }()
 
     /// Dieselbe Normalisierung wie in `OfferMatcher`, damit Suchwort und

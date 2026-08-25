@@ -78,11 +78,10 @@ enum ItemGlyphTerm {
     /// der Frage, was schon gezeichnet ist, und ein neu gezeichneter Begriff
     /// würde die Bedeutung getippter Wörter rückwirkend verschieben.
     private static func beste(aus kandidaten: Set<String>, für wort: String) -> String? {
-        if kandidaten.contains(wort) { return wort }
-        return kandidaten.min {
-            let a = MatchDictionary.synonymCount(for: $0)
-            let b = MatchDictionary.synonymCount(for: $1)
-            return a == b ? $0 < $1 : a < b
-        }
+        // Die Regel selbst steht seit dem 25.08. in `MatchDictionary.engste` —
+        // die Suche stellt dieselbe Frage, und zwei Antworten darauf würden
+        // auseinanderlaufen. Hier bleibt nur, was ein Bild zusätzlich braucht:
+        // aus einem Gleichstand einen einzigen Begriff zu machen.
+        MatchDictionary.engste(kandidaten, für: wort).min()
     }
 }
