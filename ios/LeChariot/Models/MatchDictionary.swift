@@ -37,6 +37,42 @@ enum MatchDictionary {
     private static let byTerm: [String: [String]] = loaded.byTerm
     /// Sorte → Topf, siehe `oberbegriff(of:)`.
     private static let ueber: [String: String] = loaded.ueber
+    /// Begriff → seine gesperrten Einzelwörter bzw. Wendungen.
+    private static let blockWords: [String: Set<String>] = loaded.blockWords
+    private static let blockPhrases: [String: Set<String>] = loaded.blockPhrases
+
+    /// **Sagt das Wörterbuch, dass dieser Titel nicht ist, wonach gefragt
+    /// wurde?**
+    ///
+    /// Die Sperrlisten gab es immer schon, aber gefragt wurden sie nur, wenn
+    /// das Suchwort **nicht** im Titel stand. Genau dort, wo es wörtlich
+    /// dasteht, ging der Treffer ungeprüft durch — „MILCH-SCHNITTE" bei der
+    /// Suche nach Milch, „Leckermäulchen Milch-Quark", „Schinken-Käse-
+    /// Croissant" bei Käse. Das sind 30 der 186 Feedback-Fälle aus dreißig
+    /// Tagen und die am häufigsten gemeldeten überhaupt, und das Wörterbuch
+    /// wusste die Antwort die ganze Zeit.
+    ///
+    /// **Was der Suchende selbst getippt hat, sperrt nicht.** `salami` sperrt
+    /// „pizza", damit die Tiefkühlpizza nicht als Wurst durchgeht — wer aber
+    /// „Pizza Salami" sucht, meint genau sie. Ohne diese Ausnahme fände die
+    /// Anfrage nichts mehr.
+    ///
+    /// Gesperrt ist nur, was **jeder** gemeinte Begriff sperrt: Zeigt ein
+    /// Wort auf zwei Begriffe und hat einer nichts dagegen, bleibt der
+    /// Treffer.
+    static func rejects(
+        token: String, titleTokens: Set<String>, normalizedTitle: String, typed: Set<String>
+    ) -> Bool {
+        let terms = meaning(forToken: token)
+        guard !terms.isEmpty else { return false }
+        return terms.allSatisfy { term in
+            (blockWords[term] ?? []).contains { titleTokens.contains($0) && !typed.contains($0) }
+                || (blockPhrases[term] ?? []).contains { phrase in
+                    normalizedTitle.contains(phrase)
+                        && !phrase.split(separator: " ").allSatisfy { typed.contains(String($0)) }
+                }
+        }
+    }
 
     /// **Der Topf, in dem diese Sorte liegt** — `salami` → `wurst`, `gouda` →
     /// `käse`. `nil` für jeden Begriff, der selbst einer ist.
@@ -164,7 +200,8 @@ enum MatchDictionary {
 
     private static let loaded: (
         byWord: [String: Set<String>], byPhrase: [String: Set<String>], counts: [String: Int],
-        byTerm: [String: [String]], ueber: [String: String]
+        byTerm: [String: [String]], ueber: [String: String],
+        blockWords: [String: Set<String>], blockPhrases: [String: Set<String>]
     ) = {
         // Im Test-Bundle liegt die Datei nicht in `Bundle.main`, in der App
         // schon — beide Wege, damit dieselbe Klasse in beiden Fällen lädt.
@@ -178,7 +215,7 @@ enum MatchDictionary {
             // Ohne Wörterbuch verhält sich die Suche wie vorher: Titeltreffer
             // und Tag-Gleichheit. Eine fehlende Datei darf die Suche nicht
             // abschalten.
-            return ([:], [:], [:], [:], [:])
+            return ([:], [:], [:], [:], [:], [:], [:])
         }
 
         var byWord: [String: Set<String>] = [:]
@@ -187,9 +224,17 @@ enum MatchDictionary {
         var byTerm: [String: [String]] = [:]
         var seenPerTerm: [String: Set<String>] = [:]
         var ueber: [String: String] = [:]
+        var blockWords: [String: Set<String>] = [:]
+        var blockPhrases: [String: Set<String>] = [:]
 
         for (term, entry) in file.begriffe {
             if let topf = entry.oberbegriff { ueber[term] = topf }
+            for roh in entry.block ?? [] {
+                let b = normalized(roh)
+                guard !b.isEmpty else { continue }
+                if b.contains(" ") { blockPhrases[term, default: []].insert(b) }
+                else { blockWords[term, default: []].insert(b) }
+            }
             // Gesperrte Wörter dieses Begriffs: „milchreis" darf nie auf
             // `milch` zeigen.
             let blocked = Set((entry.block ?? []).map(normalized))
@@ -212,7 +257,7 @@ enum MatchDictionary {
                 }
             }
         }
-        return (byWord, byPhrase, counts, byTerm, ueber)
+        return (byWord, byPhrase, counts, byTerm, ueber, blockWords, blockPhrases)
     }()
 
     /// Dieselbe Normalisierung wie in `OfferMatcher`, damit Suchwort und

@@ -25,6 +25,13 @@ struct OfferMatch: Equatable, Identifiable {
 /// never hits "Bitter", and a changed word start out so "Fisch" never hits
 /// "Frisch").
 ///
+/// **Und das Wörterbuch redet hier mit**, seit dem 2026-08-25. Ein Titel, der
+/// das Suchwort trägt, ist trotzdem keiner, wenn die Sperrliste des gemeinten
+/// Begriffs ihm widerspricht: „MILCH-SCHNITTE" bei Milch, „Schinken-Käse-
+/// Croissant" bei Käse. Vorher fragte Stufe 1 das Wörterbuch nie — sie war
+/// die eine Stelle, an der ein Treffer ungeprüft durchging, und genau dort
+/// stehen 30 der 186 Feedback-Fälle aus dreißig Tagen.
+///
 /// Stage 2 (category): a query token that the title does not carry may still
 /// be satisfied by the offer's `match_key` tags — either by tag equality, or
 /// through `MatchDictionary`, which maps the *word the user typed* to the
@@ -127,15 +134,25 @@ enum OfferMatcher {
         let termsPerToken = queryTokens.map { MatchDictionary.meaning(forToken: $0) }
         let phraseTerms = MatchDictionary.terms(forPhrase: normalize(query))
 
+        // Was der Suchende selbst getippt hat, darf ihn nichts kosten — siehe
+        // `MatchDictionary.rejects`.
+        let getippt = Set(queryTokens)
+
         var direct: [Offer] = []
         var category: [Offer] = []
         for offer in offers {
             let productTokens = tokens(offer.product)
+            let titelWoerter = Set(productTokens)
+            let titel = normalize(offer.product).split(separator: " ").joined(separator: " ")
             var viaTitleOnly = true
             var allSatisfied = true
 
             for (index, q) in queryTokens.enumerated() {
-                if productTokens.contains(where: { tokensMatch(q, $0) }) { continue }
+                if productTokens.contains(where: { tokensMatch(q, $0) }),
+                   !MatchDictionary.rejects(
+                       token: q, titleTokens: titelWoerter,
+                       normalizedTitle: titel, typed: getippt
+                   ) { continue }
                 // Ab hier trägt der Titel dieses Wort nicht mehr — dann ist es
                 // kein Direkttreffer mehr, auch wenn die Tags einspringen.
                 viaTitleOnly = false
