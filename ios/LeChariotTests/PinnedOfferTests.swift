@@ -8,6 +8,12 @@ import XCTest
 /// billigste Angebot, er will aber den GRÜNLÄNDER Schnittkäse für 0,99 € statt
 /// des Speck-Käse-Twisters für 0,69 € — dauerhaft auf der Liste. Alles daran
 /// ist einfach, außer den vier Verneinungen hier: Keine bricht laut.
+///
+/// **Der Twister ist als billigerer Rivale ausgezogen** (2026-08-25b): Seit
+/// die Sperrliste auch für den Titeltreffer gilt, ist er auf „Käse" gar kein
+/// Treffer mehr — `käse` sperrt „twister", und das ist die richtige Antwort
+/// auf denselben Fall. Die Rolle des billigeren Angebots übernimmt jetzt
+/// ein Käse in Scheiben; die Heftung selbst prüft sich unverändert.
 final class PinnedOfferTests: XCTestCase {
 
     // MARK: Der Schlüssel, der die Rotation überlebt
@@ -219,14 +225,14 @@ final class PinnedOfferTests: XCTestCase {
 
     /// Der Kern des Wunsches: Nicht das billigste, sondern das gewählte.
     func testThePinnedOfferBeatsTheCheapestOne() {
-        let twister = offer("Speck-Käse-Twister", price: 0.69)
+        let billiger = offer("K-CLASSIC Käse in Scheiben", price: 0.69)
         let gruenlaender = offer("GRÜNLÄNDER Schnittkäse", price: 0.99)
-        let offers = [twister, gruenlaender]
+        let offers = [billiger, gruenlaender]
 
         let ohne = ShoppingItem(text: "Käse")
         XCTAssertEqual(
             ShoppingListMatcher.suggestion(for: ohne, in: offers).match?.offer.product,
-            "Speck-Käse-Twister",
+            "K-CLASSIC Käse in Scheiben",
             "Ohne Heftung bleibt es beim billigsten — sonst prüft der Test daneben"
         )
 
@@ -241,11 +247,11 @@ final class PinnedOfferTests: XCTestCase {
     /// geheftete Produkt diese Woche nicht im Angebot, rechnet die App wieder
     /// mit dem billigsten — aber die Zeile bekommt den Satz dazu.
     func testAPinWithoutAnOfferThisWeekIsSaidOutLoud() {
-        let twister = offer("Speck-Käse-Twister", price: 0.69)
+        let billiger = offer("K-CLASSIC Käse in Scheiben", price: 0.69)
         let item = ShoppingItem(text: "Käse", pins: [offer("GRÜNLÄNDER Schnittkäse").asPin])
 
-        let vorschlag = ShoppingListMatcher.suggestion(for: item, in: [twister])
-        XCTAssertEqual(vorschlag.match?.offer.product, "Speck-Käse-Twister",
+        let vorschlag = ShoppingListMatcher.suggestion(for: item, in: [billiger])
+        XCTAssertEqual(vorschlag.match?.offer.product, "K-CLASSIC Käse in Scheiben",
                        "Der Rückfall selbst ist richtig")
         XCTAssertFalse(vorschlag.isPinned)
         XCTAssertEqual(vorschlag.dormantPins.first?.product, "GRÜNLÄNDER Schnittkäse",
@@ -279,11 +285,11 @@ final class PinnedOfferTests: XCTestCase {
     /// undefinierter Fall irgendwann einer wird.)
     func testAPinnedOfferStaysEvenWhenItIsAlsoRejected() {
         let gruenlaender = offer("GRÜNLÄNDER Schnittkäse", price: 0.99)
-        let twister = offer("Speck-Käse-Twister", price: 0.69)
+        let billiger = offer("K-CLASSIC Käse in Scheiben", price: 0.69)
         let item = ShoppingItem(text: "Käse", pins: [gruenlaender.asPin])
 
         let vorschlag = ShoppingListMatcher.suggestion(
-            for: item, in: [twister, gruenlaender],
+            for: item, in: [billiger, gruenlaender],
             isRejected: { $0.product == "GRÜNLÄNDER Schnittkäse" }
         )
         XCTAssertEqual(vorschlag.match?.offer.product, "GRÜNLÄNDER Schnittkäse")

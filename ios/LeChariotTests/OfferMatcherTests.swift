@@ -207,6 +207,77 @@ final class OfferMatcherTests: XCTestCase {
         XCTAssertEqual(treffer.map(\.offer.product), ["BÖKLUNDER Kleine Wiener"])
     }
 
+    // MARK: Die Sperrliste gilt auch für den Titeltreffer (Runde 2026-08-25b)
+
+    /// Das Milchregal, wie das Backend es taggt: Die drei gemeldeten Zeilen
+    /// tragen **kein** `milch`, weil das Wörterbuch sie für den Begriff
+    /// sperrt — nur stand das Wort trotzdem im Titel.
+    private var milchRegal: [Offer] {
+        [
+            offer("Frische Vollmilch 3,5 %", matchKey: ["milch"]),
+            offer("MILCH-SCHNITTE Snack", matchKey: ["schokolade"]),
+            offer("LECKERMÄULCHEN Milch-Quark", matchKey: ["quark"]),
+            offer("LINDENHOF Faire Milch Gouda jung", matchKey: ["käse", "gouda"]),
+        ]
+    }
+
+    /// **Der am häufigsten gemeldete Fehltreffer überhaupt.** Drei Meldungen
+    /// für die Milch-Schnitte, drei für den Milch-Quark. Beide standen als
+    /// Direkttreffer da, weil „Milch" wörtlich im Titel steht — und Stufe 1
+    /// fragte das Wörterbuch nicht, das beide längst sperrt.
+    func testATitleHitTheDictionaryBlocksIsNoHit() {
+        let treffer = OfferMatcher.matches(for: "Milch", in: milchRegal)
+        XCTAssertEqual(
+            treffer.map(\.offer.product), ["Frische Vollmilch 3,5 %"],
+            "geliefert wurde: \(treffer.map(\.offer.product))"
+        )
+    }
+
+    /// Dieselbe Form über eine Wendung statt ein Wort: „Brot-Aufstrich" wird
+    /// zu zwei Wörtern normalisiert, gesperrt ist es als Paar.
+    func testABlockedPhraseInTheTitleAlsoCounts() {
+        let regal = [
+            offer("Bauernbrot geschnitten", matchKey: ["brot"]),
+            offer("POPP Brot-Aufstrich", matchKey: ["marmelade"]),
+        ]
+        XCTAssertEqual(
+            OfferMatcher.matches(for: "Brot", in: regal).map(\.offer.product),
+            ["Bauernbrot geschnitten"]
+        )
+    }
+
+    /// **Und die Gegenprobe, ohne die die Regel zu viel nähme:** Wer das
+    /// sperrende Wort selbst tippt, meint genau das Produkt. `salami` sperrt
+    /// „pizza" — „Pizza Salami" zu suchen muss die Pizza finden.
+    func testAWordTheUserTypedDoesNotBlock() {
+        let regal = [
+            offer("Pizza Salami", matchKey: ["pizza", "wurst"]),
+            offer("AOSTE Salami", matchKey: ["wurst", "salami"]),
+        ]
+        XCTAssertEqual(
+            OfferMatcher.matches(for: "Pizza Salami", in: regal).map(\.offer.product),
+            ["Pizza Salami"]
+        )
+        // Und ohne das getippte Wort bleibt die Sperre stehen.
+        XCTAssertEqual(
+            OfferMatcher.matches(for: "Salami", in: regal).map(\.offer.product),
+            ["AOSTE Salami"]
+        )
+    }
+
+    /// Ein gesperrter Titeltreffer soll nicht über die Hintertür der Tags
+    /// zurückkommen — und ein Angebot ohne jede Sperre bleibt unberührt.
+    func testTheBlockDoesNotLeakIntoUnrelatedOffers() {
+        let regal = [
+            offer("Schinken-Käse-Croissant", matchKey: ["backwaren", "croissant"]),
+            offer("Gouda am Stück", matchKey: ["käse", "gouda"]),
+        ]
+        XCTAssertEqual(
+            OfferMatcher.matches(for: "Käse", in: regal).map(\.offer.product),
+            ["Gouda am Stück"]
+        )
+    }
+
     /// **Die Regel selbst**, an den beiden Fällen, die sie gebaut haben.
     func testTheNarrowerTermWins() {
         XCTAssertTrue(MatchDictionary.terms(forToken: "salami").contains("wurst"))

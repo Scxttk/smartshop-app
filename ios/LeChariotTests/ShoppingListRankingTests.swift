@@ -151,15 +151,19 @@ final class ShoppingListRankingTests: XCTestCase {
     // MARK: Die geheftete Wahl in der Rangfolge
 
     /// **Die Summe rechnet den Einkauf, den der Nutzer macht.** Wer den
-    /// GRÜNLÄNDER für 0,99 € geheftet hat, spart die 0,69 € des
-    /// Speck-Käse-Twisters nicht — eine Karte, die trotzdem 0,69 € behauptet,
-    /// rechnet einen fremden Einkauf aus.
+    /// GRÜNLÄNDER für 0,99 € geheftet hat, spart die 0,69 € des billigeren
+    /// Käses nicht — eine Karte, die trotzdem 0,69 € behauptet, rechnet einen
+    /// fremden Einkauf aus.
+    ///
+    /// (Der Speck-Käse-Twister stand hier als billigerer Rivale, bis die
+    /// Sperrliste am 25.08. auch für den Titeltreffer galt — auf „Käse" ist
+    /// er seither kein Treffer mehr, siehe `PinnedOfferTests`.)
     func testAPinnedChoiceCountsWithItsOwnPrice() {
         var kaese = ShoppingItem(text: "Käse")
         let gruenlaender = offer("GRÜNLÄNDER Schnittkäse", market: "Lidl", price: 0.99)
         kaese.pins = [gruenlaender.asPin]
         let offers = [
-            offer("Speck-Käse-Twister", market: "Lidl", price: 0.69),
+            offer("K-CLASSIC Käse in Scheiben", market: "Lidl", price: 0.69),
             gruenlaender,
         ]
 
@@ -242,7 +246,7 @@ final class ShoppingListRankingTests: XCTestCase {
         kaese.pins = [gruenlaender.asPin]
         let offers = [
             gruenlaender,
-            offer("Speck-Käse-Twister", market: "Lidl", price: 0.69),
+            offer("K-CLASSIC Käse in Scheiben", market: "Lidl", price: 0.69),
         ]
         XCTAssertNil(ShoppingListRanking.winnerWithoutPins(
             items: [kaese], offers: offers, chains: ["Lidl"]
