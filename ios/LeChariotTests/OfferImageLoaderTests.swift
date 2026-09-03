@@ -1,3 +1,4 @@
+import UIKit
 import XCTest
 @testable import LeChariot
 
@@ -132,9 +133,44 @@ final class OfferImageLoaderTests: XCTestCase {
         XCTAssertNil(bild)
         XCTAssertEqual(loader.failures, 1)
     }
+
+    /// **Die Zeile lädt in Zeichengröße.** Ein 1280er Original ist als Bitmap
+    /// 6,5 MB; für die 48-pt-Kachel eines 3×-Geräts sind 144 px genug — das
+    /// 79-Fache weniger Fläche. Geprüft am Dekoder selbst, weil genau dort die
+    /// Entscheidung fällt.
+    func testTheDecoderShrinksToTheDrawnSize() throws {
+        let gross = Self.pngData(side: 1280)
+        let klein = try XCTUnwrap(OfferImageLoader.decode(gross, px: 144))
+        XCTAssertLessThanOrEqual(max(klein.size.width, klein.size.height), 144)
+
+        let voll = try XCTUnwrap(OfferImageLoader.decode(gross, px: nil))
+        XCTAssertEqual(max(voll.size.width, voll.size.height), 1280)
+    }
+
+    /// Dieselbe Adresse in zwei Größen sind zwei Einträge — sonst bekäme das
+    /// Detailblatt das Vorschaubild der Zeile.
+    func testTheSameAddressInTwoSizesAreTwoEntries() async {
+        let loader = OfferImageLoader(session: session)
+        _ = await loader.image(for: Self.url, px: 144)
+        XCTAssertNotNil(loader.cached(Self.url, px: 144))
+        XCTAssertNil(loader.cached(Self.url, px: nil))
+        XCTAssertNil(loader.cached(Self.url, px: 600))
+    }
+
+    /// Ein einfarbiges PNG der gewünschten Kantenlänge.
+    private static func pngData(side: Int) -> Data {
+        let format = UIGraphicsImageRendererFormat()
+        format.scale = 1
+        let bild = UIGraphicsImageRenderer(
+            size: CGSize(width: side, height: side), format: format
+        ).image { ctx in
+            UIColor.systemGreen.setFill()
+            ctx.fill(CGRect(x: 0, y: 0, width: side, height: side))
+        }
+        return bild.pngData()!
+    }
 }
 
-/// Ein Server, der sich verhält wie unser Mirror: gültiges PNG, `no-cache`.
 private final class StubProtocol: URLProtocol {
     nonisolated(unsafe) static var requests = 0
     nonisolated(unsafe) static var status = 200

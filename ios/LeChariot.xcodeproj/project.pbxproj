@@ -39,6 +39,7 @@
 		2107D4C673398CCF60214C0D /* AddFlowState.swift in Sources */ = {isa = PBXBuildFile; fileRef = C65C082DFAF1965855277219 /* AddFlowState.swift */; };
 		225A2C8FB0552A27C37C478B /* OfferCoverageTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B8008934E9530CC72DB02CB0 /* OfferCoverageTests.swift */; };
 		22E1700D0C412F27A60762EA /* AdSlot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 761894A1F7C05226FDACA2FA /* AdSlot.swift */; };
+		23199244CBEA4AB863886AF2 /* ThumbnailURL.swift in Sources */ = {isa = PBXBuildFile; fileRef = C08C86D24F9C6322B9354B23 /* ThumbnailURL.swift */; };
 		2765933A91293C08074A287E /* Fensterbogen.swift in Sources */ = {isa = PBXBuildFile; fileRef = A35231B1EDF413044428F16C /* Fensterbogen.swift */; };
 		27C5E96CA4D8189001A3AF1D /* NextWeekJourneyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC4B4509ACDB2467DC9E422A /* NextWeekJourneyTests.swift */; };
 		2AB61ED05906633F3FDBC9B8 /* ConsentStepView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6EF1D05EA99835E5E2E073C /* ConsentStepView.swift */; };
@@ -152,6 +153,7 @@
 		A1909DA9D024DD0C7E56DF35 /* CityLookup.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3FF1F1841C6CC7D998A3D0E1 /* CityLookup.swift */; };
 		A1BB8B183011669A09B1D49C /* MatchFeedback.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3FE89A0049B517DF629F94D /* MatchFeedback.swift */; };
 		A1D6E8FCB1DA29A8C7A0E8CA /* MetricsArchive.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8DA43B01EBACACABD3767306 /* MetricsArchive.swift */; };
+		A3572DAF76A9DF45854669B1 /* ThumbnailURLTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 16C11713CF182501FFBF8C9D /* ThumbnailURLTests.swift */; };
 		A369882CBF0330DC4FF27C30 /* AppReset.swift in Sources */ = {isa = PBXBuildFile; fileRef = F32728F1183582BB532E5DBA /* AppReset.swift */; };
 		A36F9F9BE8B43115453427BA /* CartGlyph.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60ECFAA678FC3A05BAB3D5C7 /* CartGlyph.swift */; };
 		A45381A011ED9182112CB845 /* KleinkramShots.swift in Sources */ = {isa = PBXBuildFile; fileRef = E827B3D54BD1225D41B47054 /* KleinkramShots.swift */; };
@@ -282,6 +284,7 @@
 		13CC4C8399D25DD45B84F33F /* ContextTipJourneyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContextTipJourneyTests.swift; sourceTree = "<group>"; };
 		141B9CC84363FF348F50DE7D /* FirstValueJourneyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirstValueJourneyTests.swift; sourceTree = "<group>"; };
 		156684EF1053FBCD591BCE87 /* ShoppingGridTile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShoppingGridTile.swift; sourceTree = "<group>"; };
+		16C11713CF182501FFBF8C9D /* ThumbnailURLTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThumbnailURLTests.swift; sourceTree = "<group>"; };
 		175A5119BECEB87F1ED9BF08 /* FrischeGegendJourneyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FrischeGegendJourneyTests.swift; sourceTree = "<group>"; };
 		17F9BB81DFF6E0D7485B5A26 /* MarketPromptStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarketPromptStoreTests.swift; sourceTree = "<group>"; };
 		18877441406193EA39D30FF1 /* OfferBrowserTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OfferBrowserTests.swift; sourceTree = "<group>"; };
@@ -429,6 +432,7 @@
 		BD420AD34161A5E5B1521FE3 /* MockRepositoryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockRepositoryTests.swift; sourceTree = "<group>"; };
 		BE3205064BB98F72C1F6EFF8 /* ProfileStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileStore.swift; sourceTree = "<group>"; };
 		BEE1C7923853E0EC0A6F3534 /* ContextTipTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContextTipTests.swift; sourceTree = "<group>"; };
+		C08C86D24F9C6322B9354B23 /* ThumbnailURL.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThumbnailURL.swift; sourceTree = "<group>"; };
 		C21C8F6B5B5E66E104E3BC61 /* ListDirectionShots.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListDirectionShots.swift; sourceTree = "<group>"; };
 		C4B501294EE60A604D61D07A /* MarketPromptJourneyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarketPromptJourneyTests.swift; sourceTree = "<group>"; };
 		C549F3693733C383160479E6 /* BranchRequestStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BranchRequestStoreTests.swift; sourceTree = "<group>"; };
@@ -575,6 +579,7 @@
 				5E4CACBBD014A6D4BA61D2BD /* SuggestionSurfaceTests.swift */,
 				AC86AA5E9D9E3502B77B48D9 /* SundayOfferWindowTests.swift */,
 				B387BAAF541440742AD6E14E /* TermSuggestionsTests.swift */,
+				16C11713CF182501FFBF8C9D /* ThumbnailURLTests.swift */,
 				87E952CC9D361A8EAC7677F0 /* TippKostenProbe.swift */,
 				96D3BD57793F6559B36F3CC2 /* WeekBoundaryFixtureTests.swift */,
 				A313B5563AF1C120A49DE1C6 /* WeekBoundaryTests.swift */,
@@ -693,6 +698,7 @@
 				06C2FAD7BF9107A6A5B0E813 /* LoadFailure.swift */,
 				F0BAD48B7230302489E55A79 /* OfferImageLoader.swift */,
 				12F8D70A89A245C75C6851F4 /* SupabaseClient.swift */,
+				C08C86D24F9C6322B9354B23 /* ThumbnailURL.swift */,
 			);
 			path = Networking;
 			sourceTree = "<group>";
@@ -1117,6 +1123,7 @@
 				0A8A98003F355DE7128180DF /* SuggestionSurfaceTests.swift in Sources */,
 				11B18B93D49F410D115BD4FA /* SundayOfferWindowTests.swift in Sources */,
 				7B35C65332AD54503F8D51AD /* TermSuggestionsTests.swift in Sources */,
+				A3572DAF76A9DF45854669B1 /* ThumbnailURLTests.swift in Sources */,
 				D3F39D4EA924D9EFED0BE207 /* TippKostenProbe.swift in Sources */,
 				CDFF19AE2AEA4E426691CE6A /* WeekBoundaryFixtureTests.swift in Sources */,
 				2DD0C1C37ACA76883C2991F4 /* WeekBoundaryTests.swift in Sources */,
@@ -1231,6 +1238,7 @@
 				63D39D7DCEFC804DA46FB0E5 /* SupabaseClient.swift in Sources */,
 				816577DE856214745264DFE3 /* TermSuggestions.swift in Sources */,
 				E1A69AAF3FF5AAD433283B3D /* Theme.swift in Sources */,
+				23199244CBEA4AB863886AF2 /* ThumbnailURL.swift in Sources */,
 				7FD883CC9B9F27FFF180DB2E /* TourResidue.swift in Sources */,
 				F44436EFE23EEA528B5D27B8 /* UITestSupport.swift in Sources */,
 				DF8CE0FBB6D560876A6EC86A /* UserProfile.swift in Sources */,

@@ -1,4 +1,5 @@
 import Foundation
+import ImageIO
 import UIKit
 
 /// **Warum Produktbilder mal sofort da waren und mal nicht.**
@@ -54,32 +55,55 @@ final class OfferImageLoader {
     static let fallbackMaxAge = 7 * 24 * 60 * 60
 
     private let cache = NSCache<NSString, UIImage>()
+    /// Wie viel Bitmap der Speicher halten darf.
+    ///
+    /// `countLimit` allein wusste nicht, was ein Eintrag wiegt: Ein
+    /// 1280×1280-Foto ist als Bitmap 6,5 MB, 120 davon wären 780 MB. Seit die
+    /// Zeile ihr Bild in Zeichengröße lädt, sind es rund 80 kB je Eintrag —
+    /// die Schranke greift also erst, wo sie soll.
+    static let memoryLimit = 48 * 1024 * 1024
     private let session: URLSession
     /// Läuft gerade eine Anfrage auf diese Adresse? Zwei Zeilen mit demselben
     /// Bild sollen nicht zweimal laden.
-    private var inFlight: [URL: Task<UIImage?, Never>] = [:]
+    private var inFlight: [String: Task<UIImage?, Never>] = [:]
 
     init(session: URLSession = .shared) {
         self.session = session
         // 120 Bilder — deutlich mehr, als eine Bildschirmhöhe trägt, und bei
         // ~30–480 kB je Bild noch weit unter dem, was ein Prospekt kostet.
         cache.countLimit = 120
+        cache.totalCostLimit = Self.memoryLimit
     }
 
     /// Aus dem Speicher, ohne zu warten. Für den ersten `body`-Durchgang: Ein
     /// Bild, das schon da ist, soll nicht eine Runde lang als Rückfall stehen.
-    func cached(_ url: URL) -> UIImage? {
-        cache.object(forKey: url.absoluteString as NSString)
+    func cached(_ url: URL, px: Int? = nil) -> UIImage? {
+        cache.object(forKey: Self.key(url, px) as NSString)
     }
 
-    func image(for url: URL) async -> UIImage? {
-        if let hit = cached(url) {
+    /// **Der Schlüssel trägt die Größe.** Dieselbe Adresse steht in der Zeile
+    /// bei 48 pt und im Detailblatt bei 200 pt; ohne die Größe im Schlüssel
+    /// bekäme das Blatt das Vorschaubild der Zeile.
+    private static func key(_ url: URL, _ px: Int?) -> String {
+        guard let px else { return url.absoluteString }
+        return "\(url.absoluteString)|\(px)"
+    }
+
+    /// Das Bild zu dieser Adresse, höchstens `px` Pixel breit.
+    ///
+    /// `px` ist keine Bitte an den Server allein: Kennt der Host einen
+    /// Größenparameter, wird schon klein geladen ([`ThumbnailURL`]), und was
+    /// dann noch zu groß ankommt, verkleinert der Dekoder. `nil` heißt volle
+    /// Größe — das Detailblatt.
+    func image(for url: URL, px: Int? = nil) async -> UIImage? {
+        if let hit = cached(url, px: px) {
             memoryHits += 1
             return hit
         }
-        if let running = inFlight[url] { return await running.value }
+        let quelle = px.map { ThumbnailURL.sized(url, px: $0) } ?? url
+        if let running = inFlight[Self.key(url, px)] { return await running.value }
 
-        let request = URLRequest(url: url)
+        let request = URLRequest(url: quelle)
         // **Die Platte wird selbst gelesen, nicht `URLSession` überlassen.**
         //
         // Das ist der Kern des Fixes: `URLSession` hält sich an den Server, und
@@ -94,31 +118,44 @@ final class OfferImageLoader {
         // _1136x1136.png`), ändert sich das Bild, ändert sich die Adresse. Bei
         // einer Adresse wie `.../aktuell.png` wäre es falsch; die gibt es hier
         // nicht.
-        if let stored = URLCache.shared.cachedResponse(for: request),
-           let image = UIImage(data: stored.data) {
-            diskHits += 1
-            cache.setObject(image, forKey: url.absoluteString as NSString)
+        if let stored = URLCache.shared.cachedResponse(for: request) {
+            // **Auch der Plattentreffer wird nicht hier dekodiert.** Dieser
+            // Lader ist `@MainActor`; ein `UIImage(data:)` an dieser Stelle
+            // legte das Dekodieren auf den Zeichen-Thread — und genau das war
+            // beim Scrollen zu sehen.
+            let daten = stored.data
+            let task = Task<UIImage?, Never>.detached { Self.decode(daten, px: px) }
+            inFlight[Self.key(url, px)] = task
+            let image = await task.value
+            inFlight[Self.key(url, px)] = nil
+            if let image {
+                diskHits += 1
+                remember(image, url: url, px: px)
+            }
             return image
         }
 
-        let task = Task<UIImage?, Never> { [session] in
+        // **`Task.detached`, nicht `Task`.** Ein `Task {}` in einer
+        // `@MainActor`-Methode erbt die Isolation: Warten kostete nichts, aber
+        // `UIImage(data:)` und das Ablegen liefen dann auf dem Haupt-Thread.
+        let task = Task<UIImage?, Never>.detached { [session] in
             do {
                 let (data, response) = try await session.data(for: request)
                 guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
                     return nil
                 }
                 Self.store(data: data, response: http, for: request)
-                return UIImage(data: data)
+                return Self.decode(data, px: px)
             } catch {
                 return nil
             }
         }
-        inFlight[url] = task
+        inFlight[Self.key(url, px)] = task
         let image = await task.value
-        inFlight[url] = nil
+        inFlight[Self.key(url, px)] = nil
 
         if let image {
-            cache.setObject(image, forKey: url.absoluteString as NSString)
+            remember(image, url: url, px: px)
             networkLoads += 1
         } else {
             failures += 1
@@ -126,14 +163,49 @@ final class OfferImageLoader {
         return image
     }
 
+    /// Bild in den Speicher legen, mit seinem Gewicht in Bytes.
+    private func remember(_ image: UIImage, url: URL, px: Int?) {
+        cache.setObject(image, forKey: Self.key(url, px) as NSString, cost: Self.bytes(of: image))
+    }
+
+    private static func bytes(of image: UIImage) -> Int {
+        guard let cg = image.cgImage else { return 0 }
+        return cg.bytesPerRow * cg.height
+    }
+
+    /// **Rohdaten zu einem fertigen Bild — außerhalb des Haupt-Akteurs.**
+    ///
+    /// `UIImage(data:)` dekodiert nicht sofort, sondern beim ersten Zeichnen —
+    /// also im Bildlauf, auf dem Thread, der zeichnet. `ImageIO` mit
+    /// `ShouldCacheImmediately` erledigt es hier und in der Größe, die
+    /// gebraucht wird: Die Zeile zeichnet 48 pt, das sind 144 px auf einem
+    /// 3×-Gerät, und ein 1280er Original wäre als Bitmap das 79-Fache.
+    nonisolated static func decode(_ data: Data, px: Int?) -> UIImage? {
+        guard let quelle = CGImageSourceCreateWithData(data as CFData, nil) else {
+            return UIImage(data: data)
+        }
+        var options: [CFString: Any] = [kCGImageSourceShouldCacheImmediately: true]
+        if let px {
+            options[kCGImageSourceCreateThumbnailFromImageAlways] = true
+            options[kCGImageSourceCreateThumbnailWithTransform] = true
+            options[kCGImageSourceThumbnailMaxPixelSize] = px
+            guard let cg = CGImageSourceCreateThumbnailAtIndex(quelle, 0, options as CFDictionary)
+            else { return UIImage(data: data) }
+            return UIImage(cgImage: cg)
+        }
+        guard let cg = CGImageSourceCreateImageAtIndex(quelle, 0, options as CFDictionary)
+        else { return UIImage(data: data) }
+        return UIImage(cgImage: cg)
+    }
+
     /// Die Bilder der sichtbaren Liste im Voraus holen.
     ///
     /// **Ohne eigenen Nebenläufigkeits-Zirkus:** Jeder Aufruf ist ein Task, und
     /// `inFlight` verhindert Doppelläufe. Was schon im Speicher liegt, kostet
     /// einen Wörterbuch-Zugriff.
-    func prefetch(_ urls: [URL]) {
-        for url in urls where cached(url) == nil && inFlight[url] == nil {
-            Task { _ = await image(for: url) }
+    func prefetch(_ urls: [URL], px: Int? = nil) {
+        for url in urls where cached(url, px: px) == nil && inFlight[Self.key(url, px)] == nil {
+            Task { _ = await image(for: url, px: px) }
         }
     }
 
@@ -143,7 +215,9 @@ final class OfferImageLoader {
     /// nachfragen", eine fehlende Angabe heißt „raten". Für inhaltsadressierte
     /// Bilder ist beides teuer und keins davon nötig. Der `Cache-Control`-Kopf
     /// wird deshalb ersetzt, bevor die Antwort abgelegt wird — und nur er.
-    private static func store(data: Data, response: HTTPURLResponse, for request: URLRequest) {
+    nonisolated private static func store(
+        data: Data, response: HTTPURLResponse, for request: URLRequest
+    ) {
         var headers = response.allHeaderFields as? [String: String] ?? [:]
         headers["Cache-Control"] = "max-age=\(fallbackMaxAge)"
         guard let url = response.url,
