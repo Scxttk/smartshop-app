@@ -109,6 +109,7 @@ struct OffersView: View {
     /// Die Einmal-Tipps und die Ernährungsfrage — optional, damit Previews
     /// ohne sie auskommen. Siehe `ContextTipStore`.
     @Environment(ContextTipStore.self) private var tips: ContextTipStore?
+    @Environment(\.displayScale) private var displayScale
     /// Nur für die Ernährungsfrage — ebenfalls optional, aus demselben Grund.
     @Environment(ProfileStore.self) private var profile: ProfileStore?
 
@@ -429,7 +430,13 @@ struct OffersView: View {
         // Suche und Filter. Wer nach „Butter" sucht, bekommt Butter-Bilder
         // geholt und nicht die der Zeilen darüber.
         .task(id: prefetchURLs.map(\.absoluteString)) {
-            OfferImageLoader.shared.prefetch(prefetchURLs)
+            // In **Zeilengröße** vorausladen, nicht in voller: sonst wärmt der
+            // Vorlauf einen Eintrag, den die Zeile nie trifft, und zahlt für
+            // jedes Bild das Vielfache.
+            OfferImageLoader.shared.prefetch(
+                prefetchURLs,
+                px: Int((OfferThumbnail.defaultSize * displayScale).rounded(.up))
+            )
         }
         // **Dieselbe Grammatik wie die Einkaufsliste** (06.08.): Zeilen auf
         // der Seite, getrennt durch eine Haarlinie, statt Blöcken in

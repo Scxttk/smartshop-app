@@ -1,4 +1,5 @@
 import Foundation
+import UIKit
 
 #if DEBUG
 
@@ -157,6 +158,59 @@ enum UITestSupport {
         guard let i = args.firstIndex(of: "-uiTestingBulkOffers"),
               i + 1 < args.count, let n = Int(args[i + 1]), n > 0 else { return nil }
         return n
+    }
+
+    /// `-uiTestingBulkImages`: Jede Massen-Zeile bekommt ein Bild.
+    ///
+    /// **Warum das nicht immer an ist:** Ein Netzabruf im Messlauf misst die
+    /// Leitung, nicht die App — deshalb tragen die Massen-Zeilen sonst kein
+    /// Bild (siehe `MockFixtures.bulk`). Für die Frage, was das *Bild* im
+    /// Bildlauf kostet, braucht der Messstand aber genau das. Der Ausweg ist
+    /// eine Datei im eigenen Container: echte Kantenlänge, echtes Dekodieren,
+    /// keine Leitung dazwischen.
+    static var servesBulkImages: Bool {
+        ProcessInfo.processInfo.arguments.contains("-uiTestingBulkImages")
+    }
+
+    /// Die Messbilder: 1280×1280, dieselbe Kantenlänge, die ALDIs CDN liefert.
+    ///
+    /// Gezeichnet statt mitgeliefert — ein Produktfoto eines Händlers hat in
+    /// diesem Verzeichnis nichts zu suchen, und für die Dekodierkosten zählt
+    /// die Pixelzahl, nicht das Motiv.
+    ///
+    /// **Und es sind viele, nicht eines.** Der erste Anlauf am 03.09. hängte
+    /// allen 1 200 Zeilen dasselbe Bild an; das wird einmal dekodiert und
+    /// danach aus dem Speicher bedient, und die Messung stand im Rauschen.
+    /// Eine echte Woche hat 1 678 verschiedene Bilder — hier sind es
+    /// [`messbildAnzahl`], genug, dass jeder Bildschirm neue dekodiert.
+    static let messbildAnzahl = 24
+
+    static func messbild(_ index: Int) -> URL? {
+        let nummer = index % messbildAnzahl
+        let ziel = FileManager.default.temporaryDirectory
+            .appendingPathComponent("messbild-\(nummer).png")
+        if FileManager.default.fileExists(atPath: ziel.path) { return ziel }
+        let seite = 1280
+        let format = UIGraphicsImageRendererFormat()
+        format.scale = 1
+        let bild = UIGraphicsImageRenderer(
+            size: CGSize(width: seite, height: seite), format: format
+        ).image { ctx in
+            // Verlauf plus Streifen: Jedes Bild ist ein anderes, und keines
+            // fällt auf ein paar Kilobyte zusammen wie eine einfarbige Fläche.
+            let ton = CGFloat(nummer) / CGFloat(messbildAnzahl)
+            UIColor(hue: ton, saturation: 0.7, brightness: 0.9, alpha: 1).setFill()
+            ctx.fill(CGRect(x: 0, y: 0, width: seite, height: seite))
+            for i in stride(from: 0, to: seite, by: 8) {
+                let hell = CGFloat(i % 64) / 64
+                UIColor(hue: ton, saturation: 0.4, brightness: hell, alpha: 0.6).setFill()
+                ctx.fill(CGRect(x: 0, y: i, width: seite, height: 4))
+                UIColor(white: hell, alpha: 0.35).setFill()
+                ctx.fill(CGRect(x: i, y: 0, width: 4, height: seite))
+            }
+        }
+        guard let daten = bild.pngData(), (try? daten.write(to: ziel)) != nil else { return nil }
+        return ziel
     }
 
     /// `-uiTestingDichtesVerzeichnis <n>`: `n` Filialen im Mock-Verzeichnis

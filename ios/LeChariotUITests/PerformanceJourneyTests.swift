@@ -104,6 +104,24 @@ final class PerformanceJourneyTests: XCTestCase {
         }
     }
 
+    /// **Angebote mit Bildern.** Dieselbe Strecke, aber jede Zeile trägt ein
+    /// Foto — und genau das war bis zum 03.09. die teuerste Zeile im Bildlauf.
+    ///
+    /// Das Bild kommt aus dem eigenen Container (`UITestSupport.messbild`,
+    /// 1280×1280 wie beim ALDI-CDN), nicht aus dem Netz: Gemessen werden soll
+    /// das Dekodieren, nicht die Leitung. Der Unterschied zu
+    /// `testAngeboteScrolling` ist damit genau **ein** Ding, das Bild.
+    func testAngeboteMitBildernScrolling() {
+        launch(extraArguments: ["-uiTestingBulkImages"])
+        openTab("Angebote")
+        XCTAssertTrue(app.staticTexts["Top-Deals der Woche"].waitForExistence(timeout: 30),
+                      "die Angebote sind nicht geladen:\n\(app.debugDescription)")
+
+        measure(metrics: metrics, options: options) {
+            scrollAround(app.collectionViews.firstMatch)
+        }
+    }
+
     /// **Vorschau, in ihrer neuen vollen Form** — mit Markt-Leiste, Suche und
     /// Filter, und mit dem Datumszusatz auf jeder Zeile, den die laufende Woche
     /// nicht hat.

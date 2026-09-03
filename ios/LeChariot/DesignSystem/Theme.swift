@@ -439,7 +439,11 @@ struct OfferThumbnail: View {
     /// `OfferImageContent.fallback(category:emoji:title:)`.
     var category: String? = nil
     var title: String? = nil
-    var size: CGFloat = 48
+    /// Die Kantenlänge, in der die Angebotszeile zeichnet — und damit die
+    /// Größe, in der geladen wird. Als Konstante, weil das Detailblatt sie
+    /// braucht: Es füllt sich aus genau diesem Bildchen vor.
+    static let defaultSize: CGFloat = 48
+    var size: CGFloat = OfferThumbnail.defaultSize
     /// **Ob das Bildchen eine eigene Fläche bekommt** — seit dem 06.08. nur
     /// noch dort, wo es eine braucht.
     ///
@@ -458,7 +462,10 @@ struct OfferThumbnail: View {
             emojiSize: size * 0.5,
             contentMode: .fill,
             category: category,
-            title: title
+            title: title,
+            // Die Zeile lädt in **ihrer** Größe. Was darüber hinaus ankäme,
+            // zahlte sie in Bytes, im Dekoder und im Speicher.
+            drawnAt: size
         )
         .frame(width: size, height: size)
         // Screen background as the tile: stays in the brand palette instead of
@@ -496,7 +503,13 @@ struct OfferHeroImage: View {
             emojiSize: height * 0.4,
             contentMode: .fit,
             category: category,
-            title: title
+            title: title,
+            // Volle Größe — hier ist das Foto der Grund, warum jemand getippt
+            // hat. Bis es da ist, steht das Bildchen der Zeile hochskaliert
+            // (`seededBy`), damit das Blatt nicht mit einem leeren Kasten
+            // aufgeht.
+            drawnAt: nil,
+            seededBy: OfferThumbnail.defaultSize
         )
         .padding(Theme.Spacing.md)
         .frame(maxWidth: .infinity)
@@ -535,6 +548,14 @@ struct OfferImageContent: View {
     /// des Rückfalls.
     var category: String? = nil
     var title: String? = nil
+    /// Kantenlänge in Punkten, in der dieses Bild gezeichnet wird; `nil` heißt
+    /// volle Größe. Daraus wird die Pixelzahl, die geladen und dekodiert wird.
+    var drawnAt: CGFloat? = nil
+    /// Kantenlänge des Bildchens, das als Vorlage gilt, solange das große Bild
+    /// lädt. Nur das Detailblatt setzt sie.
+    var seededBy: CGFloat? = nil
+
+    @Environment(\.displayScale) private var displayScale
 
     /// Womit die Kachel gefüllt wird, wenn kein Foto da ist: gezeichnetes
     /// Kategoriezeichen, sonst Import-Emoji, sonst Anfangsbuchstabe, sonst
@@ -581,19 +602,28 @@ struct OfferImageContent: View {
     /// auf, obwohl das Foto längst da war.
     @State private var loaded: UIImage?
 
+    /// Pixel für eine Punktgröße auf diesem Bildschirm.
+    private func pixel(_ punkte: CGFloat?) -> Int? {
+        punkte.map { Int(($0 * displayScale).rounded(.up)) }
+    }
+
     var body: some View {
         if let url = imageUrl.flatMap(URL.init(string:)) {
             content(for: url)
                 // `.task(id:)`, damit eine wiederverwendete Listenzeile mit
                 // neuer Adresse auch wirklich neu lädt.
                 .task(id: url) {
-                    if let sofort = OfferImageLoader.shared.cached(url) {
+                    let px = pixel(drawnAt)
+                    if let sofort = OfferImageLoader.shared.cached(url, px: px) {
                         loaded = sofort
                         return
                     }
-                    loaded = nil
-                    let bild = await OfferImageLoader.shared.image(for: url)
-                    guard !Task.isCancelled else { return }
+                    // Das Blatt zeigt zuerst das Bildchen der Zeile, das schon
+                    // im Speicher liegt: unscharf, aber sofort und an der
+                    // richtigen Stelle.
+                    loaded = pixel(seededBy).flatMap { OfferImageLoader.shared.cached(url, px: $0) }
+                    let bild = await OfferImageLoader.shared.image(for: url, px: px)
+                    guard !Task.isCancelled, let bild else { return }
                     withAnimation(.easeOut(duration: 0.2)) { loaded = bild }
                 }
         } else {

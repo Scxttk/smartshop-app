@@ -364,6 +364,12 @@ enum MockFixtures {
     /// Kategorien und Preise rotieren, damit Gruppierung, Sortierung und
     /// Suche nicht auf einem Sonderfall messen. Die Bilder bleiben leer — ein
     /// Netzabruf im Messlauf wäre die Leitung, nicht die App.
+    ///
+    /// **Außer mit `-uiTestingBulkImages`.** Dann trägt jede Zeile eines von
+    /// 24 verschiedenen 1280×1280-Bildern aus dem eigenen Container
+    /// (`UITestSupport.messbild(_:)`): dieselbe Kantenlänge wie beim
+    /// Händler-CDN, aber ohne Leitung. Verschieden müssen sie sein, sonst
+    /// dekodiert der Lader einmal und bedient den Rest aus dem Speicher.
     static let bulkChains = ["Lidl", "Aldi", "Netto"]
 
     static func bulk(perChain: Int, weeksAhead: Int = 0) -> [Offer] {
@@ -399,6 +405,8 @@ enum MockFixtures {
                     basePrice: preis,
                     baseUnit: "1 Stück",
                     nationwide: false,
+                    imageUrl: UITestSupport.servesBulkImages
+                        ? UITestSupport.messbild(i)?.absoluteString : nil,
                     matchKey: [wort.lowercased()]
                 ))
             }
